@@ -51,7 +51,13 @@ function visualization_line_chart_shortcode($atts, $content = null)
 {
 	//use global variables
 	global $graph_ids;
-	
+	global $wpdb;
+        //setup of table name
+        $tablename        = "temperatures";
+        //make it convertable for blog switching
+        $wpdb->tables[]   = $tablename;
+        //prepare it for use in actual blog
+        $wpdb->$tablename = $tablename; //$wpdb->get_blog_prefix() . $tablename;
 	$options = shortcode_atts(array(
 		'width' => "400px",
 		'height' => "300px",
@@ -82,11 +88,11 @@ function visualization_line_chart_shortcode($atts, $content = null)
 	$graph_draw_js .= 'function draw_' . $options['id'] . '(){';
 	
 	//Create the graph
-	$options[day]           = mysql_real_escape_string($options[day]);
-	$dateChosen             = date('Y-m-d', mysql_real_escape_string(strtotime($options[day]))); //what day needs to be displayed?
-	$temperatureMeasurement = mysql_real_escape_string($options[temperatureMeasurement]); //celsius or fahrenheit?
-	$display                = mysql_real_escape_string($options[display]); //do we show only temp, only humidity or both?
-	$displayMeasurement     = mysql_real_escape_string($options[scale]);
+	$options[day]           = esc_sql($options[day]);
+	$dateChosen             = date('Y-m-d', esc_sql(strtotime($options[day]))); //what day needs to be displayed?
+	$temperatureMeasurement = esc_sql($options[temperatureMeasurement]); //celsius or fahrenheit?
+	$display                = esc_sql($options[display]); //do we show only temp, only humidity or both?
+	$displayMeasurement     = esc_sql($options[scale]);
 	
 	//check for all types of temperature
 	if (strcasecmp($display, "Temperature") == 0 OR strcasecmp($display, "Temperatures") == 0 || strcasecmp($display, "Temp") == 0 || strcasecmp($display, "Temps") == 0)
@@ -104,12 +110,12 @@ function visualization_line_chart_shortcode($atts, $content = null)
 	else
 		$displayMeasurement = "F";
 	
-	$resultSet = mysql_query("SELECT " . $display . " FROM temperatures WHERE dateMeasured='" . $dateChosen . "'");
+	$resultSet = $wpdb->get_results("SELECT " . $display . " FROM temperatures WHERE dateMeasured='" . $dateChosen . "'", ARRAY_A);
 	
 	
 	$graph_draw_js .= 'var graph = new google.visualization.LineChart(document.getElementById(\'' . $options['id'] . '\'));';
 	
-	if (mysql_num_rows($resultSet) == 0) //nothing in table 
+	if (($wpdb->num_rows) == 0) //nothing in table 
 		{
 		$content = "['Sample Time','Sample Temperature [" . $displayMeasurement . "]','Sample Humidity [%]'],"; //tell the user he has empty table
 		
@@ -185,7 +191,7 @@ function visualization_line_chart_shortcode($atts, $content = null)
 		}
 	}
 	
-	while ($row = mysql_fetch_assoc($resultSet)) {
+	foreach ($resultSet as $row) {
 		$hourMeasured = $row['hourMeasured'];
 		if (strcmp($displayMeasurement, "C") == 0)
 			$temperature = $row['temperature'];
@@ -223,7 +229,7 @@ function visualization_line_chart_shortcode($atts, $content = null)
 	
 	if (!empty($options['v_title']))
 	{
-		$resultSet = mysql_query("SELECT temperature FROM temperatures WHERE dateMeasured='" . $dateChosen . "' ORDER BY temmperature ASC LIMIT 1");//get lowest temperature  for chosen date
+		$resultSet =$wpdb->get_results("SELECT temperature FROM temperatures WHERE dateMeasured='" . $dateChosen . "' ORDER BY temmperature ASC LIMIT 1");//get lowest temperature  for chosen date
 		$graph_draw_js .= 'vAxis: {title: "' . $options['v_title'] . '", viewWindow: {min:".$resultSet."}}';
 	
 	}
