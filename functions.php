@@ -24,7 +24,7 @@ function raspberryweather_add_button($buttons)
 
 function raspberryweather_register($plugin_array)
 {
-	$url = trim(get_bloginfo('url'), "/") . "/wp-content/plugins/raspberry-weather/editor_plugin.js";
+	$url = plugins_url( 'editor_plugin.js', __FILE__ );
 	$plugin_array['raspberryweather'] = $url;
 	return $plugin_array;
 }
