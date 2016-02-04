@@ -229,7 +229,7 @@ function visualization_line_chart_shortcode($atts, $content = null)
 	
 	if (!empty($options['v_title']))
 	{
-		$resultSet =$wpdb->get_results("SELECT temperature FROM temperatures WHERE dateMeasured='" . $dateChosen . "' ORDER BY temmperature ASC LIMIT 1");//get lowest temperature  for chosen date
+		$resultSet =$wpdb->get_results("SELECT temperature FROM temperatures WHERE dateMeasured='" . $dateChosen . "' ORDER BY temperature ASC LIMIT 1");//get lowest temperature  for chosen date
 		$graph_draw_js .= 'vAxis: {title: "' . $options['v_title'] . '", viewWindow: {min:".$resultSet."}}';
 	
 	}
