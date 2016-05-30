@@ -1,8 +1,8 @@
 === Raspberry Weather ===
 Tags: Raspberry Pi, Raspberry Weather, temperature, humidity
 Requires at least: 3.0.1
-Tested up to: 4.1
-Stable tag: 4.3
+Tested up to: 4.5.2
+Stable tag: 4.5.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,17 @@ Same as above, drop me a line on my email. Or take a look at http://www.raspberr
 2. Sample graph with dummy data
 
 == Changelog ==
+
+= 1.4 =
+
+Added option to display last 30 days and last 7 days in a graph
+
+= 1.3 =
+
+Another fine contribution by Stefan Mayer, removed hardcoded path to plugin js
+
+= 1.2 =
+Thanks to Stefan Mayer for removing deprecated functions and adding some improvements! Graph now works on newest PHP versions!
 
 = 1.1 =
 Fixed bug for negative values, thank you Simon P.

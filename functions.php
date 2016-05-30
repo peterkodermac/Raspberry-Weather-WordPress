@@ -3,7 +3,7 @@
  * Plugin Name: Raspberry Weather
  * Plugin URI: www.raspberryweather.com
  * Description: Easily display temperatures and humidity taken by your Raspberry Pi.
- * Version: 1.1 
+ * Version: 1.4
  * Author: Peter Kodermac
  * Author URI: http://www.kodermac.com
  * License: GPL2
@@ -88,18 +88,25 @@ function visualization_line_chart_shortcode($atts, $content = null)
 	$graph_draw_js .= 'function draw_' . $options['id'] . '(){';
 	
 	//Create the graph
+	$whereConditions	= "";
 	$options[day]           = esc_sql($options[day]);
-	$dateChosen             = date('Y-m-d', esc_sql(strtotime($options[day]))); //what day needs to be displayed?
+	if(strpos($options[day],"Week")!==false)  //current week
+		$whereConditions= "datemeasured between '".date("Y-m-d", strtotime("-1 week"))."' and '".date('Y-m-d')."'";
+	else if(strpos($options[day],"Month")!==false) //current month
+		$whereConditions= "MONTH(datemeasured)='".date('m')."'";
+	else
+		$whereConditions= "datemeasured='".date('Y-m-d', esc_sql(strtotime($options[day])))."'"; //what day needs to be displayed?
+	
 	$temperatureMeasurement = esc_sql($options[temperatureMeasurement]); //celsius or fahrenheit?
 	$display                = esc_sql($options[display]); //do we show only temp, only humidity or both?
 	$displayMeasurement     = esc_sql($options[scale]);
 	
 	//check for all types of temperature
 	if (strcasecmp($display, "Temperature") == 0 OR strcasecmp($display, "Temperatures") == 0 || strcasecmp($display, "Temp") == 0 || strcasecmp($display, "Temps") == 0)
-		$display = "hourMeasured, temperature";
+		$display = "hourMeasured, temperature, dateMeasured";
 	
 	else if (strcasecmp($display, "Humidity") == 0 OR strcasecmp($display, "Hum") == 0)
-		$display = "hourMeasured, humidity";
+		$display = "hourMeasured, humidity, dateMeasured";
 	
 	else
 		$display = "*";
@@ -110,7 +117,7 @@ function visualization_line_chart_shortcode($atts, $content = null)
 	else
 		$displayMeasurement = "F";
 	
-	$resultSet = $wpdb->get_results("SELECT " . $display . " FROM temperatures WHERE dateMeasured='" . $dateChosen . "'", ARRAY_A);
+	$resultSet = $wpdb->get_results("SELECT " . $display . " FROM temperatures WHERE " . $whereConditions, ARRAY_A);
 	
 	
 	$graph_draw_js .= 'var graph = new google.visualization.LineChart(document.getElementById(\'' . $options['id'] . '\'));';
@@ -191,18 +198,25 @@ function visualization_line_chart_shortcode($atts, $content = null)
 		}
 	}
 	
+	//graph content - readings from sensor
 	foreach ($resultSet as $row) {
 		$hourMeasured = $row['hourMeasured'];
-		if (strcmp($displayMeasurement, "C") == 0)
+		if (strcmp($displayMeasurement, "C") == 0)//display celsius
 			$temperature = $row['temperature'];
 		
-		else
+		else//calculate to fahrenheit
 			$temperature = $row['temperature'] * (9 / 5) + 32;
 		
-		if (strpos($display, "humidity") != 0) //for displaying humidity only
-			$content .= "['" . gmdate("H:i", ($hourMeasured * 60)) . "'," . $row['humidity'] . "],";
+		//x axis - if weekly or monthly display selected, do not show hourMeasured but date
+		if(strpos($options[day],"Month")!==false || strpos($options[day],"Week")!==false)
+			$AxisX=date("d.m",  strtotime($row['dateMeasured']));
 		else
-			$content .= "['" . gmdate("H:i", ($hourMeasured * 60)) . "'," . $temperature . "," . $row['humidity'] . "],";
+			$AxisX=gmdate("H:i", ($hourMeasured * 60));
+
+		if (strpos($display, "humidity") != 0) //for displaying humidity only
+			$content .= "['" . $AxisX . "'," . $row['humidity'] . "],";
+		else
+			$content .= "['" . $AxisX . "'," . $temperature . "," . $row['humidity'] . "],";
 	}
 	
 	//Populate the data
@@ -216,6 +230,13 @@ function visualization_line_chart_shortcode($atts, $content = null)
 	//Create the options
 	$graph_draw_js .= 'var options = {';
 	$graph_draw_js .= 'curveType: "function", ';
+
+	if($wpdb->num_rows>90) //there are more than 4 days of readings that need to be displayed
+        {
+		 $graph_draw_js .= 'hAxis:{showTextEvery: 90}, '; //TODO
+        }
+
+
 	$graph_draw_js .= 'animation: {duration: 1200, easing:"in"}, ';
 	$graph_draw_js .= 'title:"' . $options['title'] . '",';
 	$graph_draw_js .= 'width:\'' . $options['width'] . '\',';
@@ -229,7 +250,7 @@ function visualization_line_chart_shortcode($atts, $content = null)
 	
 	if (!empty($options['v_title']))
 	{
-		$resultSet =$wpdb->get_results("SELECT temperature FROM temperatures WHERE dateMeasured='" . $dateChosen . "' ORDER BY temperature ASC LIMIT 1");//get lowest temperature  for chosen date
+		$resultSet =$wpdb->get_results("SELECT temperature FROM temperatures WHERE " . $whereConditions . " ORDER BY temperature ASC LIMIT 1");//get lowest temperature  for chosen date
 		$graph_draw_js .= 'vAxis: {title: "' . $options['v_title'] . '", viewWindow: {min:".$resultSet."}}';
 	
 	}
