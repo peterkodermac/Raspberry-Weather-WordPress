@@ -52,6 +52,10 @@ Same as above, drop me a line on my email. Or take a look at http://www.raspberr
 
 == Changelog ==
 
+= 1.5 =
+
+Small fix for shortcode generating button
+
 = 1.4 =
 
 Added option to display last 30 days and last 7 days in a graph

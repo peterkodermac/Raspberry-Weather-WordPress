@@ -3,13 +3,13 @@
  * Plugin Name: Raspberry Weather
  * Plugin URI: www.raspberryweather.com
  * Description: Easily display temperatures and humidity taken by your Raspberry Pi.
- * Version: 1.4
+ * Version: 1.5
  * Author: Peter Kodermac
  * Author URI: http://www.kodermac.com
  * License: GPL2
  */
 
- //Forgive me Wordpress gurus
+//Forgive me Wordpress gurus
  
 global $wpdb;
 
@@ -94,9 +94,18 @@ function visualization_line_chart_shortcode($atts, $content = null)
 		$whereConditions= "datemeasured between '".date("Y-m-d", strtotime("-1 week"))."' and '".date('Y-m-d')."'";
 	else if(strpos($options[day],"Month")!==false) //current month
 		$whereConditions= "MONTH(datemeasured)='".date('m')."'";
-	else
-		$whereConditions= "datemeasured='".date('Y-m-d', esc_sql(strtotime($options[day])))."'"; //what day needs to be displayed?
-	
+	else //will use only today and yesterday
+	{
+		if(stripos($options[day],"Today")!==false)
+			$whereConditions="datemeasured='".current_time('Y-m-d')."'";
+		if(stripos($options[day],"Yesterday")!==false)
+		{
+			$yesterday=new DateTime(current_time('Y-m-d'));
+			$yesterday->modify('-1 day');
+			$whereConditions= "datemeasured='".$yesterday->format('Y-m-d')."'";
+		}
+	}
+
 	$temperatureMeasurement = esc_sql($options[temperatureMeasurement]); //celsius or fahrenheit?
 	$display                = esc_sql($options[display]); //do we show only temp, only humidity or both?
 	$displayMeasurement     = esc_sql($options[scale]);
